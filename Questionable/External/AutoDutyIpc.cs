@@ -79,8 +79,14 @@ internal sealed class AutoDutyIpc
             if (configuration.Duties.LootTreasureCoffers)
             {
                 // AutoDuty reverts overrides by itself once it stops, so the user's AutoDuty profile stays untouched
-                // (the default 'Bare' profile has treasure looting disabled).
-                Dictionary<string, string> overrides = new() { ["DutyConfig.LootTreasure"] = "true" };
+                // (the default 'Bare' profile has treasure looting disabled). Only the 'All' loot method opens
+                // coffers reliably.
+                Dictionary<string, string> overrides = new()
+                {
+                    ["DutyConfig.LootTreasure"] = "true",
+                    ["DutyConfig.LootMethodEnum"] = "All",
+                    ["DutyConfig.LootBossTreasureOnly"] = "false",
+                };
                 if (!IpcInvoke.SafeFunc(() => _pushConfigOverrides.InvokeFunc(overrides), fallback: false,
                         logger, "Unable to tell AutoDuty to loot treasure coffers"))
                     logger.LogWarning("AutoDuty did not accept the treasure coffer override");
