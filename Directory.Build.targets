@@ -4,7 +4,7 @@
              A.B.C.D = upstream version from PunishXIV/Questionable
              E = downstream patch counter (01~99), reset per upstream release
              Current: upstream 15.756.3.56 + downstream 01 -->
-        <Version>15.756.3.5603</Version>
+        <Version>15.756.3.5604</Version>
     </PropertyGroup>
 
     <PropertyGroup>

@@ -102,33 +102,6 @@ internal static class RedeemRewardItems
         return tasks.Count != 0 ? [new MountStep.UnmountTask(), .. tasks] : tasks;
     }
 
-    /// <summary>
-    /// Opens gear coffers that are part of the given quest's rewards, nothing else. The tasks are created before the
-    /// quest is turned in, the executor skips any coffer that didn't end up in the inventory (e.g. optional rewards
-    /// that weren't picked).
-    /// </summary>
-    internal static List<ITask> CreateQuestRewardGearCofferTasks(ElementId questId, QuestData questData, IDataManager dataManager)
-    {
-        if (!Configuration.Instance().General.AutoOpenQuestRewardGearCoffers)
-            return [];
-
-        if (!questData.TryGetQuestInfo(questId, out IQuestInfo? questInfo) || questInfo is not QuestInfo info)
-            return [];
-
-        ExcelSheet<Item> itemSheet = dataManager.GetExcelSheet<Item>();
-        List<ITask> tasks = info.ItemRewards.Select(x => x.ItemId)
-            .Concat(info.ItemRewardsRaw)
-            .Distinct()
-            .Select(itemId => itemSheet.GetRowOrDefault(itemId))
-            .Where(item => item != null && ItemReward.IsGearCoffer(item.Value))
-            .Select(item => ItemReward.CreateFromItem(item!.Value, questId))
-            .OfType<ItemReward>()
-            .Select(ITask (reward) => new Task(reward))
-            .ToList();
-
-        return tasks.Count != 0 ? [new MountStep.UnmountTask(), .. tasks] : tasks;
-    }
-
     internal sealed record Task(ItemReward ItemReward) : ITask
     {
         public override string ToString() => $"TryRedeem({ItemReward.Name})";
@@ -196,7 +169,12 @@ internal static class RedeemRewardItems
                 // Wait until the character can actually use an item (not mounted, in combat,
                 // casting, animation-locked, between areas, ...) before trying to redeem.
                 if (!IsReadyToUseItem())
+                {
+                    // cutscenes and dialogue right after a turn-in can easily take longer than the timeout
+                    if (gameFunctions.IsOccupied())
+                        _giveUpAt = DateTime.Now.Add(GiveUpAfter);
                     return ETaskResult.StillRunning;
+                }
 
                 _itemCountBeforeUse = inventoryManager->GetInventoryItemCount(Task.ItemReward.ItemId);
 

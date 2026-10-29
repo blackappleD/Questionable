@@ -12,6 +12,7 @@ internal sealed class TaskCreator
     IClientState clientState,
     IChatGui chatGui,
     Configuration configuration,
+    QuestRewardCofferTracker questRewardCofferTracker,
     ILogger<TaskCreator> logger)
 {
     private readonly IChatGui _chatGui = chatGui;
@@ -113,6 +114,9 @@ internal sealed class TaskCreator
                     newTasks.Count);
             }
         }
+
+        // opened before anything else, the quest that rewarded them is already done
+        newTasks.InsertRange(0, questRewardCofferTracker.TakeTasks());
 
         if (newTasks.Count == 0)
             _logger.LogInformation("Nothing to execute for step?");

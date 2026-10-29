@@ -16,7 +16,8 @@ internal static class WaitAtEnd
         BossModIpc bossModIpc,
         RedoUtil redoUtil,
         QuestData questData,
-        IDataManager dataManager)
+        IDataManager dataManager,
+        QuestRewardCofferTracker questRewardCofferTracker)
         : ITaskFactory
     {
         public IEnumerable<ITask> CreateAllTasks(Quest quest, QuestSequence sequence, QuestStep step)
@@ -123,13 +124,8 @@ internal static class WaitAtEnd
                     {
                         WaitQuestCompleted complete = new(step.TurnInQuestId ?? quest.Id);
                         WaitDelay delay = new(TimeSpan.FromSeconds(1));
-                        List<ITask> tasks =
-                        [
-                            complete,
-                            delay,
-                            .. RedeemRewardItems.CreateRedeemTasks(questData, dataManager),
-                            .. RedeemRewardItems.CreateQuestRewardGearCofferTasks(step.TurnInQuestId ?? quest.Id, questData, dataManager)
-                        ];
+                        questRewardCofferTracker.RegisterTurnIn(step.TurnInQuestId ?? quest.Id);
+                        List<ITask> tasks = [complete, delay, .. RedeemRewardItems.CreateRedeemTasks(questData, dataManager)];
                         if (step.TurnInQuestId != null)
                             tasks.Add(Next(quest, sequence));
                         return tasks;
