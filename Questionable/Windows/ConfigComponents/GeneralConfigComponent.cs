@@ -535,5 +535,58 @@ internal sealed class GeneralConfigComponent : ConfigComponent
 #endif
             }
         }
+
+        if (QstWidgets.SectionHeader(_L("Movement"), "Movement", defaultOpen: false))
+        {
+            using (ImRaii.PushIndent())
+            {
+                ImGui.Text(_L("When stuck during navmesh movement:"));
+                ImGui.SameLine();
+                using (ImRaii.PushFont(UiBuilder.IconFont))
+                {
+                    ImGui.TextDisabled(FontAwesomeIcon.InfoCircle.ToIconString());
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    using (ImRaii.Tooltip())
+                    {
+                        ImGui.Text(_L("If you make no progress towards the next waypoint for the configured delay:"));
+                        ImGui.Text(_L("- Jump: attempts to jump over the obstacle"));
+                        ImGui.Text(_L("- Recalculate path: stops and pathfinds to the destination again"));
+                        ImGui.Text(_L("With both enabled, Questionable mostly recalculates the path and jumps every few attempts."));
+                    }
+                }
+
+                using (ImRaii.PushIndent())
+                {
+                    bool jumpWhenStuck = Configuration.General.JumpWhenStuck;
+                    if (ImGui.Checkbox(_L("Jump"), ref jumpWhenStuck))
+                    {
+                        Configuration.General.JumpWhenStuck = jumpWhenStuck;
+                        Save();
+                    }
+
+                    ImGui.SameLine();
+                    bool recalculatePathWhenStuck = Configuration.General.RecalculatePathWhenStuck;
+                    if (ImGui.Checkbox(_L("Recalculate path"), ref recalculatePathWhenStuck))
+                    {
+                        Configuration.General.RecalculatePathWhenStuck = recalculatePathWhenStuck;
+                        Save();
+                    }
+
+                    using (ImRaii.Disabled(!jumpWhenStuck && !recalculatePathWhenStuck))
+                    {
+                        int stuckDelayMs = Configuration.General.StuckDelayMs;
+                        ImGui.SetNextItemWidth(150f);
+                        if (ImGui.SliderInt(_L("Stuck delay (ms)"), ref stuckDelayMs, 500, 3000))
+                        {
+                            Configuration.General.StuckDelayMs = stuckDelayMs;
+                            Save();
+                        }
+                    }
+                }
+            }
+        }
     }
 }

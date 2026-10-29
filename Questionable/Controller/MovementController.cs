@@ -28,6 +28,7 @@ internal sealed class MovementController
     IChatGui chatGui,
     IFramework framework,
     Lazy<QuestController> questController,
+    Configuration configuration,
     ILogger<MovementController> logger) : IDisposable
 {
     public const float DefaultVerticalInteractionDistance = 1.95f;
@@ -415,13 +416,19 @@ internal sealed class MovementController
             return false;
         }
 
-        if (Environment.TickCount64 - Destination.LastWaypoint.UpdatedAt > 500)
+        bool jumpWhenStuck = configuration.General.JumpWhenStuck;
+        bool recalculatePathWhenStuck = configuration.General.RecalculatePathWhenStuck;
+        if (!jumpWhenStuck && !recalculatePathWhenStuck)
+            return false;
+
+        if (Environment.TickCount64 - Destination.LastWaypoint.UpdatedAt > configuration.General.StuckDelayMs)
         {
             // check whether we've made any progress of any kind
             if (Math.Abs(distance - Destination.LastWaypoint.Distance2DAtLastUpdate) < 0.5f && !condition[ConditionFlag.WatchingCutscene])
             {
                 int calculations = Destination.NavmeshCalculations;
-                if (calculations % 6 == 1)
+                // with both enabled, jump on every 6th attempt and recalculate otherwise
+                if (!recalculatePathWhenStuck || (jumpWhenStuck && calculations % 6 == 1))
                 {
                     logger.LogWarning("Jumping to try and resolve navmesh problem (n = {Calculations})",
                         calculations);

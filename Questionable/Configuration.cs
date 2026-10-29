@@ -236,6 +236,10 @@ internal sealed class Configuration : IPluginConfiguration
         public bool SameJobThroughoutQuest { get; set; }
         public bool IgnoreNextQuestIfPrioSet { get; set; }
         public bool AutoOpenQuestRewardGearCoffers { get; set; }
+        // Movement
+        public bool JumpWhenStuck { get; set; } = true;
+        public bool RecalculatePathWhenStuck { get; set; } = true;
+        public int StuckDelayMs { get; set; } = 500;
         // Unimplemented/hidden
         public bool DismissedReportWarning { get; set; }
         public bool ReportsDisabled { get; set; }

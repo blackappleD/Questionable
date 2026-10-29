@@ -8504,4 +8504,52 @@
     <Value lang="en">Lets AutoDuty open the treasure coffers along its path while running a duty for a quest. This only applies to duties started by Questionable and doesn't change your AutoDuty profile.</Value>
     <Value lang="zh-cn">让 AutoDuty 在为任务打副本时开启路线上的宝箱。仅对 Questionable 发起的副本生效，不会修改你的 AutoDuty 配置。</Value>
   </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>Movement</Key>
+    <Value lang="en">Movement</Value>
+    <Value lang="zh-cn">移动</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>When stuck during navmesh movement:</Key>
+    <Value lang="en">When stuck during navmesh movement:</Value>
+    <Value lang="zh-cn">导航移动卡位时：</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>If you make no progress towards the next waypoint for the configured delay:</Key>
+    <Value lang="en">If you make no progress towards the next waypoint for the configured delay:</Value>
+    <Value lang="zh-cn">在设定的时间内未向下一个路径点前进时：</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>- Jump: attempts to jump over the obstacle</Key>
+    <Value lang="en">- Jump: attempts to jump over the obstacle</Value>
+    <Value lang="zh-cn">- 跳跃：尝试跳过障碍物</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>- Recalculate path: stops and pathfinds to the destination again</Key>
+    <Value lang="en">- Recalculate path: stops and pathfinds to the destination again</Value>
+    <Value lang="zh-cn">- 重建导航：停止移动并重新寻路到目的地</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>With both enabled, Questionable mostly recalculates the path and jumps every few attempts.</Key>
+    <Value lang="en">With both enabled, Questionable mostly recalculates the path and jumps every few attempts.</Value>
+    <Value lang="zh-cn">两者都开启时，以重建导航为主，每隔几次尝试跳跃一次。</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>Recalculate path</Key>
+    <Value lang="en">Recalculate path</Value>
+    <Value lang="zh-cn">重建导航</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>Stuck delay (ms)</Key>
+    <Value lang="en">Stuck delay (ms)</Value>
+    <Value lang="zh-cn">卡位判定时间（毫秒）</Value>
+  </Entry>
 </I18N>
