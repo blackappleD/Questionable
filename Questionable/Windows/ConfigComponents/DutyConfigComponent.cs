@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -90,6 +90,16 @@ internal sealed class DutyConfigComponent : ConfigComponent
                 _L("This now does not include Trials, which are likely to have extra complexity or mechanics making them infeasible to complete as an Unrestricted Party."));
             ImGui.SameLine();
             ImGui.TextColored(QstTheme.Danger, _L("Experimental feature"));
+
+            bool lootTreasureCoffers = Configuration.Duties.LootTreasureCoffers;
+            if (ImGui.Checkbox(_L("Open treasure coffers in duties"), ref lootTreasureCoffers))
+            {
+                Configuration.Duties.LootTreasureCoffers = lootTreasureCoffers;
+                Save();
+            }
+            ImGui.SameLine();
+            ImGuiComponents.HelpMarker(
+                _L("Lets AutoDuty open the treasure coffers along its path while running a duty for a quest. This only applies to duties started by Questionable and doesn't change your AutoDuty profile."));
         }
 
         ImGui.Separator();

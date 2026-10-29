@@ -34,6 +34,7 @@ internal sealed class AutoDutyIpc
     private readonly ICallGateSubscriber<bool> _isStopped = pluginInterface.GetIpcSubscriber<bool>("AutoDuty.IsStopped");
     private readonly ICallGateSubscriber<uint, int, bool, object> _run = pluginInterface.GetIpcSubscriber<uint, int, bool, object>("AutoDuty.Run");
     private readonly ICallGateSubscriber<string, string, object> _setConfig = pluginInterface.GetIpcSubscriber<string, string, object>("AutoDuty.SetConfig");
+    private readonly ICallGateSubscriber<object, bool> _pushConfigOverrides = pluginInterface.GetIpcSubscriber<object, bool>("AutoDuty.PushConfigOverrides");
     private readonly ICallGateSubscriber<object> _stop = pluginInterface.GetIpcSubscriber<object>("AutoDuty.Stop");
 
     public bool IsConfiguredToRunContent(DutyOptions? dutyOptions)
@@ -74,6 +75,16 @@ internal sealed class AutoDutyIpc
         {
             _setConfig.InvokeAction("Meta.Unsynced", $"{dutyMode == DutyMode.Regular}");
             _setConfig.InvokeAction("Meta.DutyModeEnum", dutyMode.ToString());
+
+            if (configuration.Duties.LootTreasureCoffers)
+            {
+                // AutoDuty reverts overrides by itself once it stops, so the user's AutoDuty profile stays untouched
+                // (the default 'Bare' profile has treasure looting disabled).
+                Dictionary<string, string> overrides = new() { ["DutyConfig.LootTreasure"] = "true" };
+                if (!IpcInvoke.SafeFunc(() => _pushConfigOverrides.InvokeFunc(overrides), fallback: false,
+                        logger, "Unable to tell AutoDuty to loot treasure coffers"))
+                    logger.LogWarning("AutoDuty did not accept the treasure coffer override");
+            }
 
             _run.InvokeAction(cfcData.TerritoryId, 1, !configuration.Advanced.DisableAutoDutyBareMode);
         }

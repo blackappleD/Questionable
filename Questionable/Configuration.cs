@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Dalamud.Configuration;
 using Dalamud.Game.Text;
 using ECommons.ExcelServices;
@@ -235,6 +235,7 @@ internal sealed class Configuration : IPluginConfiguration
         public bool UseTickets { get; set; }
         public bool SameJobThroughoutQuest { get; set; }
         public bool IgnoreNextQuestIfPrioSet { get; set; }
+        public bool AutoOpenQuestRewardGearCoffers { get; set; }
         // Unimplemented/hidden
         public bool DismissedReportWarning { get; set; }
         public bool ReportsDisabled { get; set; }
@@ -265,6 +266,7 @@ internal sealed class Configuration : IPluginConfiguration
     {
         public bool RunInstancedContentWithAutoDuty { get; set; }
         public bool RunUnsynced { get; set; } = true;
+        public bool LootTreasureCoffers { get; set; }
         public HashSet<uint> WhitelistedDutyCfcIds { get; set; } = [];
         public HashSet<uint> BlacklistedDutyCfcIds { get; set; } = [];
         public Dictionary<string, bool> ExpansionHeaderStates { get; set; } = [];

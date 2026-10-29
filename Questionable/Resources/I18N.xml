@@ -8468,4 +8468,40 @@
     <Value lang="en">Update check failed; will retry next launch</Value>
     <Value lang="zh-cn">更新检查失败，将于下次启动时重试</Value>
   </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Controller/Steps/Interactions/EquipRecommended.cs -->
+    <Key>You've set Gearsetter to manage equipped gear, but it is not installed. Resetting to Vanilla.</Key>
+    <Value lang="en">You've set Gearsetter to manage equipped gear, but it is not installed. Resetting to Vanilla.</Value>
+    <Value lang="zh-cn">你已设置使用 Gearsetter 管理装备，但尚未安装。正在重置为默认。</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>Neither Stylist nor Gearsetter is installed.</Key>
+    <Value lang="en">Neither Stylist nor Gearsetter is installed.</Value>
+    <Value lang="zh-cn">Stylist 和 Gearsetter 均未安装。</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>Open gear coffers received as quest rewards</Key>
+    <Value lang="en">Open gear coffers received as quest rewards</Value>
+    <Value lang="zh-cn">自动开启任务奖励的装备箱</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/GeneralConfigComponent.cs -->
+    <Key>After turning in a quest, gear coffers that were part of that quest's rewards are opened automatically. Other usable items are not touched.</Key>
+    <Value lang="en">After turning in a quest, gear coffers that were part of that quest's rewards are opened automatically. Other usable items are not touched.</Value>
+    <Value lang="zh-cn">提交任务后，自动开启该任务奖励中的装备箱。其他可使用的道具不受影响。</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/DutyConfigComponent.cs -->
+    <Key>Open treasure coffers in duties</Key>
+    <Value lang="en">Open treasure coffers in duties</Value>
+    <Value lang="zh-cn">在副本中开启宝箱</Value>
+  </Entry>
+  <Entry>
+    <!-- Found in: ../Questionable/Windows/ConfigComponents/DutyConfigComponent.cs -->
+    <Key>Lets AutoDuty open the treasure coffers along its path while running a duty for a quest. This only applies to duties started by Questionable and doesn't change your AutoDuty profile.</Key>
+    <Value lang="en">Lets AutoDuty open the treasure coffers along its path while running a duty for a quest. This only applies to duties started by Questionable and doesn't change your AutoDuty profile.</Value>
+    <Value lang="zh-cn">让 AutoDuty 在为任务打副本时开启路线上的宝箱。仅对 Questionable 发起的副本生效，不会修改你的 AutoDuty 配置。</Value>
+  </Entry>
 </I18N>

@@ -1,4 +1,4 @@
-using Dalamud.Bindings.ImGui;
+﻿using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Utility.Raii;
 using ECommons.ExcelServices;
@@ -152,7 +152,7 @@ internal sealed class GeneralConfigComponent : ConfigComponent
                 v => Configuration.General.GatheringJob = v);
 
             ImGui.BeginGroup();
-            using (ImRaii.Disabled(!StylistIpc.IsInstalled))
+            using (ImRaii.Disabled(!StylistIpc.IsInstalled && !GearsetterIpc.IsInstalled))
             {
                 EGearsetUpdateSource gearsetSource = Configuration.General.GearsetUpdateSource;
                 ImGui.SetNextItemWidth(size.X / 2);
@@ -167,10 +167,16 @@ internal sealed class GeneralConfigComponent : ConfigComponent
                     Configuration.General.GearsetUpdateSource = EGearsetUpdateSource.Vanilla;
                     Save();
                 }
+                if (!GearsetterIpc.IsInstalled && gearsetSource is EGearsetUpdateSource.Gearsetter)
+                {
+                    Svc.Chat.Print(_L("You've set Gearsetter to manage equipped gear, but it is not installed. Resetting to Vanilla."), CommandHandler.MessageTag, CommandHandler.TagColor);
+                    Configuration.General.GearsetUpdateSource = EGearsetUpdateSource.Vanilla;
+                    Save();
+                }
             }
             ImGui.EndGroup();
-            if (!StylistIpc.IsInstalled && ImGui.IsItemHovered())
-                ImGui.SetTooltip(_L("Stylist is not installed."));
+            if (!StylistIpc.IsInstalled && !GearsetterIpc.IsInstalled && ImGui.IsItemHovered())
+                ImGui.SetTooltip(_L("Neither Stylist nor Gearsetter is installed."));
 
             ImGui.Spacing();
             ImGui.Separator();
@@ -454,6 +460,21 @@ internal sealed class GeneralConfigComponent : ConfigComponent
                 {
                     Configuration.General.IgnoreNextQuestIfPrioSet = ignoreNextQuestIfPrioSet;
                     Save();
+                }
+
+                bool autoOpenQuestRewardGearCoffers = Configuration.General.AutoOpenQuestRewardGearCoffers;
+                if (ImGui.Checkbox(_L("Open gear coffers received as quest rewards"), ref autoOpenQuestRewardGearCoffers))
+                {
+                    Configuration.General.AutoOpenQuestRewardGearCoffers = autoOpenQuestRewardGearCoffers;
+                    Save();
+                }
+
+                if (ImGui.IsItemHovered())
+                {
+                    using (ImRaii.Tooltip())
+                    {
+                        ImGui.Text(_L("After turning in a quest, gear coffers that were part of that quest's rewards are opened automatically. Other usable items are not touched."));
+                    }
                 }
 
                 //bool claimMail = Configuration.General.ClaimMail;

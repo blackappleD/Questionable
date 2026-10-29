@@ -63,11 +63,16 @@ internal static class EquipRecommended
         public override string ToString() => "EquipRecommended";
     }
 
-    internal sealed unsafe class DoEquipRecommended(IChatGui chatGui, ICondition condition, Configuration config, StylistIpc stylist)
+    internal sealed unsafe class DoEquipRecommended(IChatGui chatGui, ICondition condition, Configuration config, StylistIpc stylist, GearsetterIpc gearsetter, ILogger<DoEquipRecommended> logger)
         : TaskExecutor<EquipTask>
     {
         private bool _checkedOrTriggeredEquipmentUpdate;
         private DateTime _continueAt = DateTime.MinValue;
+
+        private List<(uint ItemId, InventoryType? SourceInventory, byte? SourceInventorySlot, RaptureGearsetModule.GearsetItemIndex TargetSlot)>? _gearsetterRecommendations;
+        private int _gearsetterIndex;
+        private bool _gearsetterHadRecommendations;
+        private bool _gearsetterSecondPassDone;
 
         protected override bool Start()
         {
@@ -80,6 +85,12 @@ internal static class EquipRecommended
                 config.General.GearsetUpdateSource = EGearsetUpdateSource.Vanilla;
                 Svc.PluginInterface.SavePluginConfig(config);
             }
+            if (!GearsetterIpc.IsInstalled && config.General.GearsetUpdateSource is EGearsetUpdateSource.Gearsetter)
+            {
+                chatGui.Print(_L("You've set Gearsetter to manage equipped gear, but it is not installed. Resetting to Vanilla."), CommandHandler.MessageTag, CommandHandler.TagColor);
+                config.General.GearsetUpdateSource = EGearsetUpdateSource.Vanilla;
+                Svc.PluginInterface.SavePluginConfig(config);
+            }
             switch (config.General.GearsetUpdateSource)
             {
                 case EGearsetUpdateSource.Vanilla:
@@ -87,6 +98,18 @@ internal static class EquipRecommended
                     break;
                 case EGearsetUpdateSource.Stylist:
                     RaptureGearsetModule.Instance()->UpdateGearset(RaptureGearsetModule.Instance()->CurrentGearsetIndex);
+                    break;
+                case EGearsetUpdateSource.Gearsetter:
+                    // Gearsetter only recommends upgrades for a saved gearset
+                    if (RaptureGearsetModule.Instance()->CurrentGearsetIndex < 0)
+                    {
+                        logger.LogWarning("No gearset is active, can't ask Gearsetter for recommendations");
+                        return false;
+                    }
+
+                    // make sure the gearset matches what is currently equipped before asking Gearsetter
+                    RaptureGearsetModule.Instance()->UpdateGearset(RaptureGearsetModule.Instance()->CurrentGearsetIndex);
+                    _continueAt = DateTime.Now.AddSeconds(0.5);
                     break;
             }
 
@@ -131,9 +154,78 @@ internal static class EquipRecommended
                     }
 
                     break;
+                case EGearsetUpdateSource.Gearsetter:
+                    if (UpdateGearsetter() is { } result)
+                        return result;
+
+                    break;
             }
 
             return DateTime.Now >= _continueAt ? ETaskResult.TaskComplete : ETaskResult.StillRunning;
+        }
+
+        private ETaskResult? UpdateGearsetter()
+        {
+            if (DateTime.Now < _continueAt)
+                return ETaskResult.StillRunning;
+
+            RaptureGearsetModule* gearsetModule = RaptureGearsetModule.Instance();
+            if (_gearsetterRecommendations == null)
+            {
+                _gearsetterRecommendations = gearsetter.GetRecommendationsForGearset((byte)gearsetModule->CurrentGearsetIndex) ?? [];
+                _gearsetterIndex = 0;
+                if (_gearsetterRecommendations.Count > 0 && !_gearsetterHadRecommendations)
+                {
+                    _gearsetterHadRecommendations = true;
+                    chatGui.Print(_L("Equipping recommended gear."), CommandHandler.MessageTag, CommandHandler.TagColor);
+                }
+
+                return ETaskResult.StillRunning;
+            }
+
+            if (_gearsetterIndex < _gearsetterRecommendations.Count)
+            {
+                (uint itemId, InventoryType? sourceInventory, byte? sourceSlot, RaptureGearsetModule.GearsetItemIndex targetSlot) =
+                    _gearsetterRecommendations[_gearsetterIndex++];
+                if (sourceInventory == null || sourceSlot == null)
+                    return ETaskResult.StillRunning;
+
+                InventoryManager* inventoryManager = InventoryManager.Instance();
+                InventoryContainer* sourceContainer = inventoryManager->GetInventoryContainer(sourceInventory.Value);
+                InventoryItem* sourceItem = sourceContainer != null ? sourceContainer->GetInventorySlot(sourceSlot.Value) : null;
+                if (sourceItem == null || sourceItem->ItemId != itemId)
+                {
+                    // Gearsetter returns the same slot twice if two copies of the same ring should be worn,
+                    // the second pass below picks up the other one.
+                    logger.LogInformation("Item {ItemId} is no longer in {Inventory} slot {Slot}", itemId, sourceInventory, sourceSlot);
+                    return ETaskResult.StillRunning;
+                }
+
+                logger.LogInformation("Equipping item {ItemId} from {Inventory} slot {Slot} to {TargetSlot}", itemId, sourceInventory, sourceSlot, targetSlot);
+                inventoryManager->MoveItemSlot(sourceInventory.Value, sourceSlot.Value, InventoryType.EquippedItems, (ushort)targetSlot, true);
+                _continueAt = DateTime.Now.AddSeconds(0.1);
+                return ETaskResult.StillRunning;
+            }
+
+            if (_gearsetterHadRecommendations && !_gearsetterSecondPassDone)
+            {
+                _gearsetterSecondPassDone = true;
+                _gearsetterRecommendations = null;
+                gearsetModule->UpdateGearset(gearsetModule->CurrentGearsetIndex);
+                _continueAt = DateTime.Now.AddSeconds(0.5);
+                return ETaskResult.StillRunning;
+            }
+
+            if (!_checkedOrTriggeredEquipmentUpdate)
+            {
+                _checkedOrTriggeredEquipmentUpdate = true;
+                if (_gearsetterHadRecommendations)
+                    gearsetModule->UpdateGearset(gearsetModule->CurrentGearsetIndex);
+                _continueAt = DateTime.Now.AddSeconds(0.25);
+                return ETaskResult.StillRunning;
+            }
+
+            return null;
         }
 
         private bool IsAllRecommendedGearEquipped()

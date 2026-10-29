@@ -14,6 +14,13 @@ public abstract record ItemReward(ItemRewardDetails Item)
     internal static bool IsValidCoffer(Item item) =>
         item.ItemAction.RowId is 1085 or 388 or 367 && item.ItemUICategory.RowId is 61;
 
+    /// <summary>
+    /// Coffers handed out as quest rewards that contain gear (weapon/armor/accessory/attire coffers),
+    /// as opposed to e.g. triple triad card packs (367).
+    /// </summary>
+    internal static bool IsGearCoffer(Item item) =>
+        item.ItemAction.RowId is 1085 or 388 && item.ItemUICategory.RowId is 61;
+
     internal static ItemReward? CreateFromItem(Item item, ElementId elementId)
     {
         if (IsValidCoffer(item))

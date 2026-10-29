@@ -7,7 +7,8 @@ namespace Questionable.Model.Common;
 public enum EGearsetUpdateSource
 {
     Vanilla,
-    Stylist
+    Stylist,
+    Gearsetter
 }
 
 public sealed class GearsetUpdateSourceConverter() : EnumConverter<EGearsetUpdateSource>();

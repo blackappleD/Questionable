@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Reflection;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
@@ -36,6 +36,7 @@ internal sealed class PluginConfigComponent
     [
         "https://puni.sh/api/plugins"
     ];
+    private const string VeraRepositoryUrl = "https://puni.sh/api/repository/vera";
     private const string DalamudOfficialRepo = "https://kamori.goats.dev/Plugin/PluginMaster";
 
     private readonly IDalamudPluginInterface _pluginInterface = pluginInterface;
@@ -171,6 +172,12 @@ internal sealed class PluginConfigComponent
             new(NightmareXivRepositoryUrl),
             "/stylist c",
             AlternateRepositoryUrls: NightmareXivRepositoryAlternates),
+        new("Gearsetter",
+            "Gearsetter",
+            _L("Gear manager"),
+            new("https://git.carvel.li/liza/Gearsetter"),
+            new(VeraRepositoryUrl),
+            "/gearsetter"),
         new("SelectString",
             "SelectString",
             _L("Select items in menus via 0-9 keys rather than mouse"),

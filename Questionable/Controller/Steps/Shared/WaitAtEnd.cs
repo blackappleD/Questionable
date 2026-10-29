@@ -123,7 +123,13 @@ internal static class WaitAtEnd
                     {
                         WaitQuestCompleted complete = new(step.TurnInQuestId ?? quest.Id);
                         WaitDelay delay = new(TimeSpan.FromSeconds(1));
-                        List<ITask> tasks = [complete, delay, .. RedeemRewardItems.CreateRedeemTasks(questData, dataManager)];
+                        List<ITask> tasks =
+                        [
+                            complete,
+                            delay,
+                            .. RedeemRewardItems.CreateRedeemTasks(questData, dataManager),
+                            .. RedeemRewardItems.CreateQuestRewardGearCofferTasks(step.TurnInQuestId ?? quest.Id, questData, dataManager)
+                        ];
                         if (step.TurnInQuestId != null)
                             tasks.Add(Next(quest, sequence));
                         return tasks;
