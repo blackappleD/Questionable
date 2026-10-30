@@ -672,6 +672,15 @@ internal sealed class QuestController : MiniTaskController<QuestController>
                 }
                 else if (StartedQuest == null || StartedQuest.Quest.Id != currentQuestId)
                 {
+                    // a quest completion cutscene can move the player to another zone; building the new quest's
+                    // tasks mid-transition would base them on the old territory (e.g. trying to walk to Mor Dhona
+                    // while already in the Rising Stones), so wait until the transition finishes
+                    if (_condition[ConditionFlag.BetweenAreas] || _condition[ConditionFlag.BetweenAreas51])
+                    {
+                        DebugState = _L("In loading screen");
+                        return;
+                    }
+
                     if (_questRegistry.TryGetQuest(currentQuestId, out Quest? quest))
                     {
                         _highlightObject.SetHighlight([]);
