@@ -40,12 +40,12 @@ internal sealed class TaskQueue
         CurrentTaskExecutor = null;
     }
 
-    public void InterruptWith(List<ITask> interruptionTasks)
+    public void InterruptWith(List<ITask> interruptionTasks, bool redoCompletedTasks = true)
     {
         List<ITask?> newTasks =
         [
             ..interruptionTasks,
-            .._completedTasks.Where(x => !ReferenceEquals(x, CurrentTaskExecutor?.CurrentTask)).ToList(),
+            ..(redoCompletedTasks ? _completedTasks.Where(x => !ReferenceEquals(x, CurrentTaskExecutor?.CurrentTask)).ToList() : []),
             CurrentTaskExecutor?.CurrentTask,
             .._tasks
         ];

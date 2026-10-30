@@ -183,7 +183,8 @@ internal abstract class MiniTaskController<T> : IDisposable
     public void InterruptQueueWithCombat()
     {
         _logger.LogWarning("Interrupted, attempting to resolve (if in combat)");
-        if (_condition[ConditionFlag.InCombat])
+        bool insideSinglePlayerDuty = IsInsideSinglePlayerDuty();
+        if (_condition[ConditionFlag.InCombat] && !insideSinglePlayerDuty)
         {
             List<ITask> tasks = [];
             if (_condition[ConditionFlag.Mounted])
@@ -194,7 +195,7 @@ internal abstract class MiniTaskController<T> : IDisposable
             _taskQueue.InterruptWith(tasks);
         }
         else
-            _taskQueue.InterruptWith([new WaitAtEnd.WaitDelay()]);
+            _taskQueue.InterruptWith([new WaitAtEnd.WaitDelay()], redoCompletedTasks: !insideSinglePlayerDuty);
 
         LogTasksAfterInterruption();
     }
@@ -205,10 +206,16 @@ internal abstract class MiniTaskController<T> : IDisposable
         {
             _logger.LogWarning("Interrupted, attempting to redo previous tasks (not in combat)");
 
-            _taskQueue.InterruptWith([new WaitAtEnd.WaitDelay()]);
+            _taskQueue.InterruptWith([new WaitAtEnd.WaitDelay()], redoCompletedTasks: !IsInsideSinglePlayerDuty());
             LogTasksAfterInterruption();
         }
     }
+
+    // inside the quest battle, redoing the step's completed tasks would re-run the pre-duty teleport/move/interact
+    // against the overworld zone; BossMod handles combat in there
+    private bool IsInsideSinglePlayerDuty() =>
+        _condition[ConditionFlag.BoundByDuty] &&
+        _taskQueue.RemainingTasks.Any(x => x is SinglePlayerDuty.WaitSinglePlayerDuty);
 
     private void LogTasksAfterInterruption()
     {
