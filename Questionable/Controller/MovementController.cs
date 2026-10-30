@@ -67,11 +67,12 @@ internal sealed class MovementController
         }
     }
 
-    public bool IsPathfinding => _pathfindTask is { IsCompleted: false };
+    public bool IsPathfinding => _pathfindTask is { IsCompleted: false } || _navmeshRetryTimeout != null;
     public DestinationData? Destination { get; set; }
     public DateTime MovementStartedAt { get; private set; } = DateTime.Now;
     public int BuiltNavmeshPercent => navmeshIpc.GetBuildProgress();
     private DateTime? _landAndRetryTimeout;
+    private DateTime? _navmeshRetryTimeout;
     private DestinationData? _previousDestinationData;
 
     public void Dispose() => IpcInvoke.TryOnFrameworkThread(framework, Stop, logger);
@@ -93,6 +94,25 @@ internal sealed class MovementController
             var retry = _previousDestinationData;
             _previousDestinationData = null;
             _landAndRetryTimeout = null;
+            NavigateTo(retry);
+            return;
+        }
+        if (_navmeshRetryTimeout != null && _previousDestinationData != null)
+        {
+            if (!IsNavmeshReady)
+            {
+                if (DateTime.Now > _navmeshRetryTimeout)
+                {
+                    Stop();
+                    throw new PathfindingFailedException("Timed out waiting for navmesh to be ready");
+                }
+                return;
+            }
+
+            logger.LogInformation("Navmesh is ready, retrying pathfinding");
+            var retry = _previousDestinationData;
+            _previousDestinationData = null;
+            _navmeshRetryTimeout = null;
             NavigateTo(retry);
             return;
         }
@@ -174,8 +194,14 @@ internal sealed class MovementController
             else if (_pathfindTask.IsCompleted)
             {
                 string error = "Unable to complete pathfinding task";
-                logger.LogWarning(error);
+                logger.LogWarning(_pathfindTask.Exception, error);
                 //_commandManager.ProcessCommand("/vnav rebuild");
+                if (!IsNavmeshReady)
+                {
+                    WaitForNavmeshThenRetry();
+                    return;
+                }
+
                 ResetPathfinding();
                 throw new PathfindingFailedException(error);
             }
@@ -297,6 +323,11 @@ internal sealed class MovementController
     {
         ResetPathfinding();
 
+        // a new destination supersedes any pending retry
+        _previousDestinationData = null;
+        _landAndRetryTimeout = null;
+        _navmeshRetryTimeout = null;
+
         if (InputManager.IsAutoRunning())
         {
             logger.LogInformation("Turning off auto-move");
@@ -327,6 +358,13 @@ internal sealed class MovementController
         NavigationOptions effective = options with { Fly = fly };
         PrepareNavigation(type, dataId, to, effective, useNavmesh: true);
         logger.LogInformation("Pathfinding to {Destination}", Destination);
+
+        // right after a territory change, vnavmesh may still be loading the new mesh and rejects any query
+        if (!IsNavmeshReady)
+        {
+            WaitForNavmeshThenRetry();
+            return;
+        }
 
         Destination.NavmeshCalculations++;
         _cancellationTokenSource = new();
@@ -370,6 +408,14 @@ internal sealed class MovementController
         logger.LogInformation("Moving to {Destination}", Destination);
         navmeshIpc.MoveTo(to, fly);
         MovementStartedAt = DateTime.Now;
+    }
+
+    private void WaitForNavmeshThenRetry()
+    {
+        logger.LogInformation("Navmesh is not ready, waiting before pathfinding to {Destination}", Destination);
+        _previousDestinationData = Destination;
+        _navmeshRetryTimeout ??= DateTime.Now.AddSeconds(30);
+        ResetPathfinding();
     }
 
     public void ResetPathfinding()
@@ -495,6 +541,7 @@ internal sealed class MovementController
         Destination = null;
         _previousDestinationData = null;
         _landAndRetryTimeout = null;
+        _navmeshRetryTimeout = null;
 
         if (InputManager.IsAutoRunning())
         {
