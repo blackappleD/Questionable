@@ -310,6 +310,14 @@ internal sealed class YesNoChoiceHandler : IDisposable
     // 823 requests the configured difficulty. Click Yes (Normal) if the duty does not start.
     private unsafe void ConfirmSinglePlayerDutyStart(AddonSelectYesno* addonSelectYesno)
     {
+        // Already inside the instance (e.g. "Start the operation?" after talking to an NPC): nothing to request.
+        if (_condition[ConditionFlag.BoundByDuty])
+        {
+            _logger.LogInformation("Inside the quest battle; confirming Yes");
+            addonSelectYesno->AtkUnitBase.FireCallbackInt(0);
+            return;
+        }
+
         byte difficulty = _configuration.SinglePlayerDuties.RetryDifficulty;
         _logger.LogInformation("Requesting solo quest battle at difficulty {Difficulty}", difficulty);
 
