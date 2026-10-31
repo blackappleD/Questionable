@@ -328,21 +328,26 @@ internal sealed class YesNoChoiceHandler : IDisposable
             return;
         }
 
-        _ = _framework.RunOnTick(ConfirmNormalIfDutyDidNotStart, TimeSpan.FromSeconds(2));
+        string? prompt = AtkValueAdapter.ReadString(addonSelectYesno->AtkUnitBase.AtkValues[0]);
+        _ = _framework.RunOnTick(() => ConfirmNormalIfDutyDidNotStart(prompt), TimeSpan.FromSeconds(2));
     }
 
-    private unsafe void ConfirmNormalIfDutyDidNotStart()
+    private unsafe void ConfirmNormalIfDutyDidNotStart(string? prompt)
     {
         if (!_questController.IsRunning)
             return;
 
+        // not checking OccupiedInCutSceneEvent: the prompt can come up right after a cutscene while the flag is
+        // still set (e.g. 'In from the Cold'), the open yes/no is what tells us the duty didn't start
         if (_condition[ConditionFlag.BoundByDuty] ||
-            _condition[ConditionFlag.BetweenAreas] ||
-            _condition[ConditionFlag.OccupiedInCutSceneEvent])
+            _condition[ConditionFlag.BetweenAreas])
             return;
 
         if (!_gameGui.TryGetAddonByName("SelectYesno", out AddonSelectYesno* addon) ||
             !addon->AtkUnitBase.IsVisible)
+            return;
+
+        if (AtkValueAdapter.ReadString(addon->AtkUnitBase.AtkValues[0]) != prompt)
             return;
 
         _logger.LogInformation("StartSoloQuestBattle did not enter the duty; confirming Yes (Normal)");
