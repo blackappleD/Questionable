@@ -1,9 +1,7 @@
 using System.Text.RegularExpressions;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
-using Dalamud.Game.ClientState.Conditions;
 using ECommons.UIHelpers.AddonMasterImplementations;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using Lumina.Excel.Sheets;
@@ -35,8 +33,6 @@ internal sealed class YesNoChoiceHandler : IDisposable
     private readonly IToastGui _toastGui;
     private readonly DialogueReferenceResolver _dialogueReferenceResolver;
     private readonly TravelDestinationResolver _travelDestinationResolver;
-    private readonly IFramework _framework;
-    private readonly ICondition _condition;
     private readonly ILogger<YesNoChoiceHandler> _logger;
 
     private readonly Regex _returnRegex;
@@ -64,8 +60,6 @@ internal sealed class YesNoChoiceHandler : IDisposable
         IPluginLog pluginLog,
         DialogueReferenceResolver dialogueReferenceResolver,
         TravelDestinationResolver travelDestinationResolver,
-        IFramework framework,
-        ICondition condition,
         ILogger<YesNoChoiceHandler> logger)
     {
         _addonLifecycle = addonLifecycle;
@@ -84,8 +78,6 @@ internal sealed class YesNoChoiceHandler : IDisposable
         _toastGui = toastGui;
         _dialogueReferenceResolver = dialogueReferenceResolver;
         _travelDestinationResolver = travelDestinationResolver;
-        _framework = framework;
-        _condition = condition;
         _logger = logger;
 
         _returnRegex = DataManagerAdapter.GetRegex<Addon>(dataManager, 196, addon => addon.Text, pluginLog)!;
@@ -307,51 +299,13 @@ internal sealed class YesNoChoiceHandler : IDisposable
         return false;
     }
 
-    // 823 requests the configured difficulty. Click Yes (Normal) if the duty does not start.
+    // Always the plain "Duty calls" yes/no, i.e. Normal difficulty; Easy/Very Easy is only offered through
+    // DifficultySelectYesNo after a wipe. Requesting a difficulty via StartSoloQuestBattle (823) instead closes the
+    // prompt without starting the duty if that difficulty isn't unlocked yet (e.g. first attempt at 'In from the Cold').
     private unsafe void ConfirmSinglePlayerDutyStart(AddonSelectYesno* addonSelectYesno)
     {
-        // Already inside the instance (e.g. "Start the operation?" after talking to an NPC): nothing to request.
-        if (_condition[ConditionFlag.BoundByDuty])
-        {
-            _logger.LogInformation("Inside the quest battle; confirming Yes");
-            addonSelectYesno->AtkUnitBase.FireCallbackInt(0);
-            return;
-        }
-
-        byte difficulty = _configuration.SinglePlayerDuties.RetryDifficulty;
-        _logger.LogInformation("Requesting solo quest battle at difficulty {Difficulty}", difficulty);
-
-        if (!GameMain.ExecuteCommand((int)GameCommand.StartSoloQuestBattle, difficulty))
-        {
-            _logger.LogInformation("StartSoloQuestBattle was rejected; confirming Yes (Normal)");
-            addonSelectYesno->AtkUnitBase.FireCallbackInt(0);
-            return;
-        }
-
-        string? prompt = AtkValueAdapter.ReadString(addonSelectYesno->AtkUnitBase.AtkValues[0]);
-        _ = _framework.RunOnTick(() => ConfirmNormalIfDutyDidNotStart(prompt), TimeSpan.FromSeconds(2));
-    }
-
-    private unsafe void ConfirmNormalIfDutyDidNotStart(string? prompt)
-    {
-        if (!_questController.IsRunning)
-            return;
-
-        // not checking OccupiedInCutSceneEvent: the prompt can come up right after a cutscene while the flag is
-        // still set (e.g. 'In from the Cold'), the open yes/no is what tells us the duty didn't start
-        if (_condition[ConditionFlag.BoundByDuty] ||
-            _condition[ConditionFlag.BetweenAreas])
-            return;
-
-        if (!_gameGui.TryGetAddonByName("SelectYesno", out AddonSelectYesno* addon) ||
-            !addon->AtkUnitBase.IsVisible)
-            return;
-
-        if (AtkValueAdapter.ReadString(addon->AtkUnitBase.AtkValues[0]) != prompt)
-            return;
-
-        _logger.LogInformation("StartSoloQuestBattle did not enter the duty; confirming Yes (Normal)");
-        addon->AtkUnitBase.FireCallbackInt(0);
+        _logger.LogInformation("Confirming Yes for quest battle");
+        addonSelectYesno->AtkUnitBase.FireCallbackInt(0);
     }
 
     private unsafe bool HandleTravelYesNo(AddonSelectYesno* addonSelectYesno,
